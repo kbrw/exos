@@ -44,7 +44,7 @@ port.
 
 ```elixir
 defmodule Calculator do
-  def start_link(ini), do: GenServer.start_link(Exos.Proc,{"#{:code.priv_dir(:myproj)}/calculator","java -cp 'target/*' clojure.main calculator.clj",ini},name: __MODULE__)
+  def start_link(ini), do: GenServer.start_link(Exos.Proc,{"java -cp 'target/*' clojure.main calculator.clj",ini,cd: "#{:code.priv_dir(:myproj)}/calculator"},name: __MODULE__)
   def add(v), do: GenServer.cast(__MODULE__,{:add,v})
   def rem(v), do: GenServer.cast(__MODULE__,{:rem,v})
   def get, do: GenServer.call(__MODULE__,:get,:infinity)

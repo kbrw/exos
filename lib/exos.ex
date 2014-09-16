@@ -1,8 +1,8 @@
 defmodule Exos.Proc do
   use GenServer
 
-  def init({cd,cmd,initarg}) do
-    port = Port.open({:spawn,'#{cmd}'}, [:binary,:exit_status, packet: 4, cd: '#{cd}'])
+  def init({cmd,initarg,opts}) do
+    port = Port.open({:spawn,'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
     send(port,{self,{:command,:erlang.term_to_binary(initarg)}})
     {:ok,port}
   end
