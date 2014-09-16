@@ -16,9 +16,11 @@ defmodule Exos.Proc do
     {:noreply,port}
   end
 
-  def handle_call(term,_,port) do
+  def handle_call(term,reply_to,port) do
     send(port,{self,{:command,:erlang.term_to_binary(term)}})
-    result = receive do {^port,{:data,b}}->:erlang.binary_to_term(b) end
-    {:reply,result,port}
+    spawn fn -> 
+      GenServer.reply(reply_to,receive do {^port,{:data,b}}->:erlang.binary_to_term(b) end)
+    end
+    {:noreply,port}
   end
 end
