@@ -1,0 +1,13 @@
+/_build
+/deps
+*.errlog
+erl_crash.dump
+*.ez
+*_data
+*.config
+*.swp
+.DS_Store
+.idea
+*gz
+*nugs
+
