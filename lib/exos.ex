@@ -1,6 +1,9 @@
 defmodule Exos.Proc do
   use GenServer
 
+  def start_link(cmd,init,opts \\ [],link_opts \\ []), do:
+    GenServer.start_link(Exos.Proc,{cmd,init,opts},link_opts)
+
   def init({cmd,initarg,opts}) do
     port = Port.open({:spawn,'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
     send(port,{self,{:command,:erlang.term_to_binary(initarg)}})
