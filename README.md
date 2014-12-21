@@ -5,46 +5,23 @@ Exos is a simple Port Wrapper : a GenServer which forwards cast and call to a
 linked Port. Requests and responses are converted using binary erlang term
 external representation.
 
-You can use [clojure-erlastic](http://github.com/awetzel/clojure-erlastic),
-[python-erlastic](http://github.com/awetzel/python-erlastic), etc.
+You can use it to create a GenServer for Python, Clojure, NodeJS with :
+- [clojure-erlastic](http://github.com/awetzel/clojure-erlastic)
+- [python-erlastic](http://github.com/awetzel/python-erlastic)
+- [node-erlastic](http://github.com/awetzel/node_erlastic)
 
-## Exemple usage : a clojure calculator ##
-
-Using [clojure-erlastic](http://github.com/awetzel/clojure-erlastic), your can easily create
-a port and communicate with it.
-
-> mix new myproj
-
-> cd myproj ; mkdir -p priv/calculator
-
-> vim project.clj
-
-```clojure
-(defproject calculator "0.0.1" 
-  :dependencies [[clojure-erlastic "0.2.3"]
-                 [org.clojure/core.match "0.2.1"]])
-```
-
-> lein uberjar
-
-> vim calculator.clj
-
-```clojure
-(require '[clojure-erlastic.core :refer [run-server]])
-(use '[clojure.core.match :only (match)])
-(run-server
-  (fn [term count] (match term
-    [:add n] [:noreply (+ count n)]
-    [:rem n] [:noreply (- count n)]
-    :get [:reply count count])))
-```
-
-Then in your project, you can use Exos.Proc GenServer as a proxy to the clojure
-port.
+## Launching a Clojure/Python/NodeJS GenServer and use it in Elixir ##
 
 ```elixir
-defmodule Calculator do
-  def start_link(ini), do: GenServer.start_link(Exos.Proc,{"java -cp 'target/*' clojure.main calculator.clj",ini,cd: "#{:code.priv_dir(:myproj)}/calculator"},name: __MODULE__)
+defmodule Account do
+  def cmd do
+    case Application.get_env(:account_impl) do
+      :python-> "venv/bin/python -u account.py"
+      :node-> "node account.js"
+      :clojure-> "java -cp 'target/*' clojure.main account.clj"
+    end
+  end
+  def start_link(ini), do: GenServer.start_link(Exos.Proc,{cmd,ini,cd: "#{:code.priv_dir(:myproj)}/account"},name: __MODULE__)
   def add(v), do: GenServer.cast(__MODULE__,{:add,v})
   def rem(v), do: GenServer.cast(__MODULE__,{:rem,v})
   def get, do: GenServer.call(__MODULE__,:get,:infinity)
@@ -58,7 +35,7 @@ defmodule MyProj.App do
     use Supervisor
     def start_link, do: Supervisor.start_link(__MODULE__,[])
     def init([]), do: supervise([
-      worker(Calculator,0)
+      worker(Account,0)
     ], strategy: :one_for_one)
   end
 end
@@ -72,12 +49,82 @@ def application do
 end
 ```
 
-Then you can use the calculator 
+Finally just implement your account server in any language as describe below,
+and use it as a standard GenServer.
 
 > iex -S mix
 
 ```elixir
-Calculator.add(5)
-Calculator.rem(1)
-4 == Calculator.get
+Account.add(5)
+Account.rem(1)
+4 == Account.get
+```
+
+## Account Server Implementation in clojure ##
+
+```bash
+mix new myproj
+cd myproj ; mkdir -p priv/account; cd priv/account
+vim project.clj
+```
+
+```clojure
+(defproject account "0.0.1" 
+  :dependencies [[clojure-erlastic "0.2.3"]
+                 [org.clojure/core.match "0.2.1"]])
+```
+
+```bash
+lein uberjar
+vim account.clj
+```
+
+```clojure
+(require '[clojure-erlastic.core :refer [run-server]])
+(use '[clojure.core.match :only (match)])
+(run-server
+  (fn [term count] (match term
+    [:add n] [:noreply (+ count n)]
+    [:rem n] [:noreply (- count n)]
+    :get [:reply count count])))
+```
+
+## Account Server Implementation in Python >3.4 ##
+
+```bash
+mix new myproj
+cd myproj ; mkdir -p priv/account; cd priv/account
+echo "git://github.com/awetzel/python-erlastic.git#egg=erlastic" > requirements.txt
+pyvenv venv
+./venv/bin/pip install -r requirements.txt
+vim account.py
+```
+
+```python
+mailbox,port = port_connection()
+account = next(mailbox) #first msg is initial state
+for req in mailbox:
+  if req == "get": port.send(account)
+  else:
+    (op,amount) = req
+    account = (account+amount) if op=="add" else (account-amount)
+```
+
+## Account Server Implementation in NodeJS ##
+
+```bash
+mix new myproj
+cd myproj ; mkdir -p priv/account; cd priv/account
+npm init
+npm install node_erlastic --save
+vim account.js
+```
+
+```javascript
+require('node_erlastic').server(function(term,from,current_amount,done){
+  if (term == "get") return done("reply",current_amount);
+  if (term[0] == "add") return done("noreply",current_amount+term[1]);
+  if (term[0] == "rem") return done("noreply",current_amount-term[1]);
+  throw new Error("unexpected request")
+});
 ```
