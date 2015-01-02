@@ -12,6 +12,19 @@ You can use it to create a GenServer for Python, Clojure, NodeJS with :
 
 ## Launching a Clojure/Python/NodeJS GenServer and use it in Elixir ##
 
+Usage : `Exos.Proc.start_link` (see function documentation), then the resulting
+process is a GenServer where cast and call are binary encoded through stdio to
+the underlying process. If the GenServer receive messages outside of a call, a
+GenEvent can be attached to receive these messages as events.
+
+See `test/port_example.exs` for a reference implementation of a server that can
+be launched in a port with `Exos.Proc`, and `test/exos_test.exs` for its use.
+`clojure/python/node_erlastic` projects can be used to launch a
+java/python/javascript GenServer.
+
+See above an example of an account manager server developped in
+python/nodejs/clojure.
+
 ```elixir
 defmodule Account do
   def cmd do
@@ -21,7 +34,7 @@ defmodule Account do
       :clojure-> "java -cp 'target/*' clojure.main account.clj"
     end
   end
-  def start_link(ini), do: GenServer.start_link(Exos.Proc,{cmd,ini,cd: "#{:code.priv_dir(:myproj)}/account"},name: __MODULE__)
+  def start_link(ini), do: Exos.Proc.start_link(cmd,ini,[cd: "#{:code.priv_dir(:myproj)}/account"],name: __MODULE__)
   def add(v), do: GenServer.cast(__MODULE__,{:add,v})
   def rem(v), do: GenServer.cast(__MODULE__,{:rem,v})
   def get, do: GenServer.call(__MODULE__,:get,:infinity)
