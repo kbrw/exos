@@ -48,7 +48,7 @@ defmodule MyProj.App do
     use Supervisor
     def start_link, do: Supervisor.start_link(__MODULE__,[])
     def init([]), do: supervise([
-      worker(Account,0)
+      worker(Account,[0])
     ], strategy: :one_for_one)
   end
 end
