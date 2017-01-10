@@ -3,7 +3,7 @@ defmodule Exos.Mixfile do
 
   def project do
     [app: :exos,
-     version: "1.0.0",
+     version: "1.0.1",
      elixir: ">= 1.0.0",
      description: description,
      package: package,
