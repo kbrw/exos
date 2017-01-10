@@ -7,7 +7,7 @@ defmodule Exos.Mixfile do
      elixir: ">= 1.0.0",
      description: description,
      package: package,
-     deps: []]
+     deps: [{:ex_doc, ">= 0.0.0", only: :dev}]]
   end
 
   def application do
@@ -15,8 +15,8 @@ defmodule Exos.Mixfile do
   end
 
   defp package do
-    [ contributors: ["Arnaud Wetzel"],
-      licenses: ["The MIT License (MIT)"],
+    [ maintainers: ["Arnaud Wetzel"],
+      licenses: ["MIT"],
       links: %{ "GitHub"=>"https://github.com/awetzel/exos" } ]
   end
 
