@@ -5,8 +5,8 @@ defmodule Exos.Mixfile do
     [app: :exos,
      version: "1.0.1",
      elixir: ">= 1.0.0",
-     description: description,
-     package: package,
+     description: description(),
+     package: package(),
      deps: [{:ex_doc, ">= 0.0.0", only: :dev}]]
   end
 

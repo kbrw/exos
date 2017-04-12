@@ -26,7 +26,7 @@ defmodule Exos.Proc do
   def init({cmd,initarg,opts,event_manager}) do
     port = Port.open({:spawn,'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
     if initarg !== :no_init, do:
-      send(port,{self,{:command,Erl.term_to_binary(initarg)}})
+      send(port,{self(),{:command,Erl.term_to_binary(initarg)}})
     {:ok,{port,event_manager}}
   end
 
@@ -39,15 +39,15 @@ defmodule Exos.Proc do
   end
 
   def handle_cast(term,{port,_}=state) do
-    send(port,{self,{:command,Erl.term_to_binary(term)}})
+    send(port,{self(),{:command,Erl.term_to_binary(term)}})
     {:noreply,state}
   end
 
   def handle_call(term,_reply_to,{port,_}=state) do
-    send(port,{self,{:command,Erl.term_to_binary(term)}})
+    send(port,{self(),{:command,Erl.term_to_binary(term)}})
     res = receive do 
       {^port,{:data,b}}->Erl.binary_to_term(b)
-      {^port,{:exit_status,_}}=exit_msg->send(self,exit_msg);{:error,:port_terminated} # catch exit msg and resend it
+      {^port,{:exit_status,_}}=exit_msg->send(self(),exit_msg);{:error,:port_terminated} # catch exit msg and resend it
     end
     {:reply,res,state}
   end
