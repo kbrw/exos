@@ -8,7 +8,7 @@ external representation.
 You can use it to create a GenServer for Python, Clojure, NodeJS with :
 - [clojure-erlastic](http://github.com/awetzel/clojure-erlastic)
 - [python-erlastic](http://github.com/awetzel/python-erlastic)
-- [node-erlastic](http://github.com/awetzel/node_erlastic)
+- [node-erlastic](http://github.com/kbrw/node_erlastic)
 
 ## Launching a Clojure/Python/NodeJS GenServer and use it in Elixir ##
 
@@ -48,7 +48,7 @@ defmodule MyProj.App do
     use Supervisor
     def start_link, do: Supervisor.start_link(__MODULE__,[])
     def init([]), do: supervise([
-      worker(Account,0)
+      worker(Account,[0])
     ], strategy: :one_for_one)
   end
 end
