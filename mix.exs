@@ -15,7 +15,7 @@ defmodule Exos.Mixfile do
   end
 
   defp package do
-    [ maintainers: ["Arnaud Wetzel"],
+    [ maintainers: ["Arnaud Wetzel", "Jean Parpaillon"],
       licenses: ["MIT"],
       links: %{ "GitHub"=>"https://github.com/kbrw/exos" } ]
   end
