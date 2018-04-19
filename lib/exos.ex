@@ -34,7 +34,7 @@ defmodule Exos.Proc do
   def handle_info({port,{:exit_status,_}},{port,_}=state), do: {:stop,:port_terminated,state}
   def handle_info({port,{:data,b}},{port,event_manager}=state) do
     if event_manager, do:
-      GenEvent.notify(event_manager, Erl.binary_to_term(b))
+      :gen_event.notify(event_manager, Erl.binary_to_term(b))
     {:noreply,state}
   end
 
