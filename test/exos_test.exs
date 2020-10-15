@@ -1,9 +1,19 @@
 defmodule ExosTest do
   use ExUnit.Case, async: false
 
+  @dispatch_key :events
+  def dispatch_event(event) do
+    Registry.dispatch(TestEvents, @dispatch_key, fn entries ->
+      for {pid, nil} <- entries, do: send(pid,{:event,event})
+    end)
+  end
+  def register! do
+    {:ok, _} = Registry.register(TestEvents,@dispatch_key,nil)
+  end
+
   setup_all do
-    GenEvent.start_link(name: TestEvents)
-    Exos.Proc.start_link("elixir --erl -noinput #{__DIR__}/port_example.exs",0,[],[name: EchoAndAccount],TestEvents)
+    Registry.start_link(keys: :duplicate, name: TestEvents)
+    Exos.Proc.start_link("elixir --erl -noinput #{__DIR__}/port_example.exs",0,[],[name: EchoAndAccount],&dispatch_event/1)
     :ok
   end
 
@@ -20,16 +30,17 @@ defmodule ExosTest do
 
   test "Test event management" do
     defmodule TestHandler do #put last event in state
-      use GenEvent
-      def handle_event(term,_), do: {:ok, term}
-      def handle_call(:last,last), do: {:ok,last,last}
+      use GenServer
+      def init(_) do ExosTest.register!(); {:ok,[]} end
+      def handle_info({:event,event},_) do {:noreply, event} end
+      def handle_call(:last,_,last) do {:reply,last,last} end
     end
-    GenEvent.add_handler(TestEvents, TestHandler, [])
+    GenServer.start_link(TestHandler,[], name: TestHandler)
     GenServer.cast(EchoAndAccount,{:echo,{:hello,:world}})
     receive do after 1000->:ok end
-    assert {:hello,:world} = GenEvent.call(TestEvents,TestHandler,:last)
+    assert {:hello,:world} = GenServer.call(TestHandler,:last)
     GenServer.cast(EchoAndAccount,{:echo,{:hello,:arnaud}})
     receive do after 1000->:ok end
-    assert {:hello,:arnaud} = GenEvent.call(TestEvents,TestHandler,:last)
+    assert {:hello,:arnaud} = GenServer.call(TestHandler,:last)
   end
 end
