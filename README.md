@@ -14,8 +14,8 @@ You can use it to create a GenServer for Python, Clojure, NodeJS with :
 
 Usage : `Exos.Proc.start_link` (see function documentation), then the resulting
 process is a GenServer where cast and call are binary encoded through stdio to
-the underlying process. If the GenServer receive messages outside of a call, a
-GenEvent can be attached to receive these messages as events.
+the underlying process. If the GenServer receive messages outside of a call, an
+anonymous function can be attached to be called on each message.
 
 See `test/port_example.exs` for a reference implementation of a server that can
 be launched in a port with `Exos.Proc`, and `test/exos_test.exs` for its use.
