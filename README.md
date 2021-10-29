@@ -141,3 +141,9 @@ require('node_erlastic').server(function(term,from,current_amount,done){
   throw new Error("unexpected request")
 });
 ```
+
+# CONTRIBUTING
+
+Hi, and thank you for wanting to contribute.
+Please refer to the centralized informations available at: https://github.com/kbrw#contributing
+
