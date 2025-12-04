@@ -19,31 +19,31 @@ defmodule Exos.Proc do
   - to allow easy supervision, if the port die with a return code == 0, then
     the GenServer die with the reason `:normal`, else with the reason `:port_terminated`
   """
-  def start_link(cmd,init, opts \\ [],link_opts \\ [],event_fun \\ nil), do:
-    GenServer.start_link(Exos.Proc,{cmd,init,opts,event_fun},link_opts)
+  def start_link(cmd,init, ttb_opts \\ [], opts \\ [],link_opts \\ [],event_fun \\ nil), do:
+    GenServer.start_link(Exos.Proc,{cmd,init,ttb_opts, opts,event_fun},link_opts)
 
-  def init({cmd,initarg,opts}), do: init({cmd,initarg,opts,nil})
-  def init({cmd,initarg,opts,event_fun}) do
-    port = Port.open({:spawn,'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
+  def init({cmd,initarg,ttb_opts,opts}), do: init({cmd,initarg,ttb_opts,opts,nil})
+  def init({cmd,initarg,ttb_opts,opts,event_fun}) do
+    port = Port.open({:spawn,~c'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
     if initarg !== :no_init, do:
-      send(port,{self(),{:command,Erl.term_to_binary(initarg)}})
+      send(port,{self(),{:command,Erl.term_to_binary(initarg,ttb_opts)}})
     {:ok,{port,event_fun}}
   end
 
-  def handle_info({port,{:exit_status,0}},{port,_}=state), do: {:stop,:normal,state}
-  def handle_info({port,{:exit_status,_}},{port,_}=state), do: {:stop,:port_terminated,state}
-  def handle_info({port,{:data,b}},{port,event_fun}=state) do
+  def handle_info({port,{:exit_status,0}},{port,_,_}=state), do: {:stop,:normal,state}
+  def handle_info({port,{:exit_status,_}},{port,_,_}=state), do: {:stop,:port_terminated,state}
+  def handle_info({port,{:data,b}},{port,event_fun,_}=state) do
     if event_fun do event_fun.(Erl.binary_to_term(b)) end
     {:noreply,state}
   end
 
-  def handle_cast(term,{port,_}=state) do
-    send(port,{self(),{:command,Erl.term_to_binary(term)}})
+  def handle_cast(term,{port,_,ttb_opts}=state) do
+    send(port,{self(),{:command,Erl.term_to_binary(term,ttb_opts)}})
     {:noreply,state}
   end
 
-  def handle_call(term,_reply_to,{port,_}=state) do
-    send(port,{self(),{:command,Erl.term_to_binary(term)}})
+  def handle_call(term,_reply_to,{port,_,ttb_opts}=state) do
+    send(port,{self(),{:command,Erl.term_to_binary(term,ttb_opts)}})
     res = receive do 
       {^port,{:data,b}}->Erl.binary_to_term(b)
       {^port,{:exit_status,_}}=exit_msg->send(self(),exit_msg);{:error,:port_terminated} # catch exit msg and resend it
