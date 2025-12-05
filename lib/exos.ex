@@ -12,38 +12,44 @@ defmodule Exos.Proc do
   - `cmd` is the shell command to launch the port
   - when the port starts, it automatically receives as first message the `init`
     term if `init !== :no_init`
-  - `opts` are options for `Port.open` (for instance `[cd: "/path/"]`)
-  - `link_opts` are options for `GenServer.start_link` (for instance `[name: :servername]`)
+  - `port_opts` are options for `Port.open` (for instance `[cd: "/path/"]`)
+  - `gen_server_opts` are options for `GenServer.start_link` (for instance `[name: :servername]`)
   - messages received from the port outside of a `GenServer.call`
     context trigger a `event_fun.(event)` call if `event_fun` is not `nil` (default)
+  - `etf_opts` are options for `:erlang.term_to_binary` and `:erlang.binary_to_term`
   - to allow easy supervision, if the port die with a return code == 0, then
     the GenServer die with the reason `:normal`, else with the reason `:port_terminated`
   """
-  def start_link(cmd,init, ttb_opts \\ [], opts \\ [],link_opts \\ [],event_fun \\ nil), do:
-    GenServer.start_link(Exos.Proc,{cmd,init,ttb_opts, opts,event_fun},link_opts)
+  def start_link(cmd, init, opts \\ []) do
+    port_opts = Keyword.get(opts, :port_opts, [])
+    gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
+    event_fun = Keyword.get(opts, :event_fun)
+    etf_opts = Keyword.get(opts, :etf_opts, [])
+    GenServer.start_link(Exos.Proc, {cmd, init, port_opts, event_fun, etf_opts}, gen_server_opts)
+  end
 
-  def init({cmd,initarg,ttb_opts,opts}), do: init({cmd,initarg,ttb_opts,opts,nil})
-  def init({cmd,initarg,ttb_opts,opts,event_fun}) do
+  def init({cmd,initarg,opts,etf_opts}), do: init({cmd,initarg,opts,nil,etf_opts})
+  def init({cmd,initarg,opts,event_fun,etf_opts}) do
     port = Port.open({:spawn,~c'#{cmd}'}, [:binary,:exit_status, packet: 4] ++ opts)
     if initarg !== :no_init, do:
-      send(port,{self(),{:command,Erl.term_to_binary(initarg,ttb_opts)}})
-    {:ok,{port,event_fun}}
+      send(port,{self(),{:command,Erl.term_to_binary(initarg,etf_opts)}})
+    {:ok, {port, event_fun, etf_opts}}
   end
 
   def handle_info({port,{:exit_status,0}},{port,_,_}=state), do: {:stop,:normal,state}
   def handle_info({port,{:exit_status,_}},{port,_,_}=state), do: {:stop,:port_terminated,state}
-  def handle_info({port,{:data,b}},{port,event_fun,_}=state) do
-    if event_fun do event_fun.(Erl.binary_to_term(b)) end
+  def handle_info({port,{:data,b}},{port,event_fun,etf_opts}=state) do
+    if event_fun do event_fun.(Erl.binary_to_term(b,etf_opts)) end
     {:noreply,state}
   end
 
-  def handle_cast(term,{port,_,ttb_opts}=state) do
-    send(port,{self(),{:command,Erl.term_to_binary(term,ttb_opts)}})
+  def handle_cast(term,{port,_,etf_opts}=state) do
+    send(port,{self(),{:command,Erl.term_to_binary(term,etf_opts)}})
     {:noreply,state}
   end
 
-  def handle_call(term,_reply_to,{port,_,ttb_opts}=state) do
-    send(port,{self(),{:command,Erl.term_to_binary(term,ttb_opts)}})
+  def handle_call(term,_reply_to,{port,_,etf_opts}=state) do
+    send(port,{self(),{:command,Erl.term_to_binary(term,etf_opts)}})
     res = receive do 
       {^port,{:data,b}}->Erl.binary_to_term(b)
       {^port,{:exit_status,_}}=exit_msg->send(self(),exit_msg);{:error,:port_terminated} # catch exit msg and resend it
