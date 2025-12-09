@@ -20,12 +20,40 @@ defmodule Exos.Proc do
   - to allow easy supervision, if the port die with a return code == 0, then
     the GenServer die with the reason `:normal`, else with the reason `:port_terminated`
   """
+  @deprecated "Use #{__MODULE__}.start_link/3 instead"
+  def start_link(cmd, init, port_opts, gen_server_opts, event_fun) do
+    start_link(cmd, init, [
+      port_opts: port_opts,
+      gen_server_opts: gen_server_opts,
+      event_fun: event_fun,
+    ])
+  end
+
+  @deprecated "Use #{__MODULE__}.start_link/3 instead"
+  def start_link(cmd, init, port_opts, gen_server_opts) do
+    start_link(cmd, init, [
+      port_opts: port_opts,
+      gen_server_opts: gen_server_opts,
+    ])
+  end
+
   def start_link(cmd, init, opts \\ []) do
-    port_opts = Keyword.get(opts, :port_opts, [])
-    gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
-    event_fun = Keyword.get(opts, :event_fun)
-    etf_opts = Keyword.get(opts, :etf_opts, [])
-    GenServer.start_link(Exos.Proc, {cmd, init, port_opts, event_fun, etf_opts}, gen_server_opts)
+    known_opts = [:port_opts, :gen_server_opts, :event_fun, :etf_opts]
+    case Keyword.keyword?(opts) and match?({:ok, _}, Keyword.validate(opts, known_opts)) do
+      true ->
+        port_opts = Keyword.get(opts, :port_opts, [])
+        gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
+        event_fun = Keyword.get(opts, :event_fun)
+        etf_opts = Keyword.get(opts, :etf_opts, [])
+        GenServer.start_link(Exos.Proc, {cmd, init, port_opts, event_fun, etf_opts}, gen_server_opts)
+
+      false ->
+        # If no key matches with our opts, then it means it is the old API being used.
+        IO.warn("You are using the old API of #{__MODULE__}.start_link/3 that takes Port.open/2
+          options as 3rd parameter. The new API takes a Keyword list instead to handle options of
+          the old API.")
+        start_link(cmd, init, [port_opts: opts])
+    end
   end
 
   def init({cmd,initarg,opts,etf_opts}), do: init({cmd,initarg,opts,nil,etf_opts})
