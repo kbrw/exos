@@ -13,7 +13,11 @@ defmodule ExosTest do
 
   setup_all do
     Registry.start_link(keys: :duplicate, name: TestEvents)
-    Exos.Proc.start_link("elixir --erl -noinput #{__DIR__}/port_example.exs",0,[],[name: EchoAndAccount],&dispatch_event/1)
+    Exos.Proc.start_link(
+      "elixir --erl -noinput #{__DIR__}/port_example.exs",
+      0,
+      gen_server_opts: [name: EchoAndAccount],
+      event_fun: &dispatch_event/1)
     :ok
   end
 
