@@ -66,8 +66,8 @@ defmodule Exos.Proc do
 
   def handle_info({port,{:exit_status,0}},{port,_,_}=state), do: {:stop,:normal,state}
   def handle_info({port,{:exit_status,_}},{port,_,_}=state), do: {:stop,:port_terminated,state}
-  def handle_info({port,{:data,b}},{port,event_fun,etf_opts}=state) do
-    if event_fun do event_fun.(Erl.binary_to_term(b,etf_opts)) end
+  def handle_info({port,{:data,b}},{port,event_fun,_}=state) do
+    if event_fun do event_fun.(Erl.binary_to_term(b)) end
     {:noreply,state}
   end
 
