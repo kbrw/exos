@@ -1,14 +1,17 @@
 defmodule Exos.Mixfile do
   use Mix.Project
 
+  defp version, do: "2.1.0"
+
   def project do
     [
       app: :exos,
-      version: "2.1.0",
-      elixir: ">= 1.9.0",
+      version: version(),
+      elixir: "~> 1.9",
       description: description(),
       package: package(),
-      deps: [{:ex_doc, ">= 0.0.0", only: :dev, runtime: false}],
+      source_url: source_url(),
+      deps: deps(),
       docs: docs()
     ]
   end
@@ -17,21 +20,31 @@ defmodule Exos.Mixfile do
     [extra_applications: [:logger]]
   end
 
+  defp deps do
+    [{:ex_doc, ">= 0.0.0", only: :dev, runtime: false, warn_if_outdated: true}]
+  end
+
   defp docs do
     [
       api_reference: false,
       extras: [
-        "CHANGELOG.md": [title: "Changelog"],
         "README.md": [title: "Overview"],
+        "CHANGELOG.md": [title: "Changelog"],
       ],
-      main: "readme"
+      main: "readme",
+      source_ref: "v#{version()}"
     ]
   end
 
   defp package do
-    [ maintainers: ["Arnaud Wetzel", "Jean Parpaillon"],
+    [
+      maintainers: ["Arnaud Wetzel", "Jean Parpaillon"],
       licenses: ["MIT"],
-      links: %{ "GitHub"=>"https://github.com/kbrw/exos" } ]
+      links: %{
+        "Changelog" => "https://hexdocs.pm/exos/changelog.html",
+        "GitHub" => source_url(),
+      }
+    ]
   end
 
   defp description do
@@ -44,4 +57,6 @@ defmodule Exos.Mixfile do
     clojure|python|node_erlastic on https://github.com/kbrw)
     """
   end
+
+  defp source_url, do: "https://github.com/kbrw/exos"
 end
