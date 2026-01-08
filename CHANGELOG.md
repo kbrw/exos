@@ -1,5 +1,11 @@
 # CHANGELOG
 
-## 2.0.1
+## 2.1.0
 
-- Support for OTP 26+ (due to changes on the encoding of ETF introduced with OTP 26)
+### Changed
+
+- Soft deprectated passing options with multiple arguments, prefer using named options
+  now.
+- Added configuration option for ETF encoding.
+  You can now communicate with an outdated program by passing `etf_opts: [version: 1]`
+  for example.
