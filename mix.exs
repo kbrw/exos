@@ -1,7 +1,7 @@
 defmodule Exos.Mixfile do
   use Mix.Project
 
-  defp version, do: "2.1.0"
+  defp version, do: "2.1.1"
 
   def project do
     [

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.1.1
+
+### Fixed
+
+- Replace usage of function `Keyword.validate/2` which is not usable with Elixir v1.9
+
 ## 2.1.0
 
 ### Changed
